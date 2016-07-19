@@ -35,7 +35,7 @@ typedef NS_ENUM(NSUInteger, FLAnimatedImageFrameCacheSize) {
     FLAnimatedImageFrameCacheSizeNoLimit = 0,                // 0 means no specific limit
     FLAnimatedImageFrameCacheSizeLowMemory = 1,              // The minimum frame cache size; this will produce frames on-demand.
     FLAnimatedImageFrameCacheSizeGrowAfterMemoryWarning = 2, // If we can produce the frames faster than we consume, one frame ahead will already result in a stutter-free playback.
-    FLAnimatedImageFrameCacheSizeDefault = 5                 // Build up a comfy buffer window to cope with CPU hiccups etc.
+    FLAnimatedImageFrameCacheSizeDefault = 15                 // Build up a comfy buffer window to cope with CPU hiccups etc.
 };
 
 
@@ -174,7 +174,7 @@ static NSHashTable *allAnimatedImagesWeak;
 
 - (instancetype)initWithAnimatedGIFData:(NSData *)data
 {
-    return [self initWithAnimatedGIFData:data optimalFrameCacheSize:0 predrawingEnabled:YES];
+    return [self initWithAnimatedGIFData:data optimalFrameCacheSize:FLAnimatedImageFrameCacheSizeDefault predrawingEnabled:NO];
 }
 
 - (instancetype)initWithAnimatedGIFData:(NSData *)data optimalFrameCacheSize:(NSUInteger)optimalFrameCacheSize predrawingEnabled:(BOOL)isPredrawingEnabled
@@ -228,7 +228,9 @@ static NSHashTable *allAnimatedImagesWeak;
         //     };
         // }
         NSDictionary *imageProperties = (__bridge_transfer NSDictionary *)CGImageSourceCopyProperties(_imageSource, NULL);
-        _loopCount = [[[imageProperties objectForKey:(id)kCGImagePropertyGIFDictionary] objectForKey:(id)kCGImagePropertyGIFLoopCount] unsignedIntegerValue];
+        NSNumber *loops = [[imageProperties objectForKey:(id)kCGImagePropertyGIFDictionary] objectForKey:(id)kCGImagePropertyGIFLoopCount] ;
+        
+        _loopCount = loops != nil ? [loops unsignedIntegerValue] : 1;
         
         // Iterate through frame images
         size_t imageCount = CGImageSourceGetCount(_imageSource);
